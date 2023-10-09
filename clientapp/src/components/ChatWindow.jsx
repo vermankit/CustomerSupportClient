@@ -9,7 +9,41 @@ function ChatWindow(props) {
   const [agentConnected, setAgentConnected] = useState(false);
   const [poolCount, setPoolCount] = useState(0);
   const [intervalId, setIntervalId] = useState(null);
+  const [connectionId,setConnectionId] = useState("");
   //Create SignalR connection
+  // useEffect(() => {
+  //   const newConnection = new signalR.HubConnectionBuilder()
+  //     .withUrl("https://localhost:7137/chathub", {
+  //       skipNegotiation: true,
+  //       transport: signalR.HttpTransportType.WebSockets
+  //     })
+  //     .build();
+  //   setConnection(newConnection);
+  //   newConnection.start()
+  //     .then(() => {        
+  //       newConnection.invoke('ConnectToAgent', props.userId) 
+  //       .then((response) => {
+  //         console.log("Response from server:", response);
+  //         if (response !== null) {  
+  //           setAgentData(data);
+  //           setAgentConnected(true);
+  //           setPoolCount(0);
+  //         }
+  //       })
+  //       .catch((error) => {
+  //         console.error('Error retrieving connection ID:', error);
+  //       });        
+  //     })
+  //     .catch((error) => console.error(error));      
+
+  //   return () => {     
+  //     // if (newConnection) {
+  //     //   newConnection.stop()
+  //     //     .then(() => console.log("SignalR connection stopped")).catch((error) => console.error(error));
+  //     // }
+  //   };
+  // }, []);
+ 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl("https://localhost:7137/chathub", {
@@ -18,65 +52,63 @@ function ChatWindow(props) {
       })
       .build();
     setConnection(newConnection);
-    newConnection.start()
-      .then(() => {        
-        newConnection.invoke('ConnectToAgent', props.userId) 
+    let retryTimeout; // Variable to hold the retry interval
+    const tryConnectToAgent = () => {
+      newConnection.invoke('ConnectToAgent', props.userId) 
         .then((response) => {
           console.log("Response from server:", response);
           if (response !== null) {  
-            setAgentData(data);
+            setAgentData(response);
             setAgentConnected(true);
             setPoolCount(0);
+            clearTimeout(retryTimeout);
+          } else {
+            // If the response is null, retry after 5 seconds
+            retryTimeout = setTimeout(tryConnectToAgent, 5000);  // Retry after 5 seconds (5000 milliseconds)
           }
         })
         .catch((error) => {
           console.error('Error retrieving connection ID:', error);
-        });        
+        });
+    };
+    
+    newConnection.on("ReceiveMessage", (message) => {
+      // Handle the received message
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+    newConnection.start()
+      .then(() => {
+        tryConnectToAgent(); // Initial attempt to connect to agent
       })
-      .catch((error) => console.error(error));      
-
-    return () => {     
+      .catch((error) => console.error(error));
+  
+    return () => {
       if (newConnection) {
         newConnection.stop()
-          .then(() => console.log("SignalR connection stopped")).catch((error) => console.error(error));
+          .then(() => console.log("SignalR connection stopped"))
+          .catch((error) => console.error(error));
       }
     };
   }, []);
+  
 
-  // useEffect(() => {
-  //   if (connection) {    
-  //     const callHubMethod = () => {       
-  //       connection.invoke('ConnectToAgent', props.userId).then(response => {        
-  //         console.log("Response from server:", response);
-  //         if (response === null) {
-  //           setPoolCount(prevCount => prevCount + 1);       
-  //           if (poolCount === 2) {
-  //             console.log("Received three consecutive null responses. Stopping connection.");
-  //             connection.stop().catch(error => console.error(error));              
-  //           }
-  //         } else {
-  //           setAgentData(data);
-  //           setAgentConnected(true);
-  //           setPoolCount(0);
-  //         }
-  //       }).catch(error => console.error(error));
-  //     };
-  //     callHubMethod();
-  //     const Id = setInterval(callHubMethod, 5000); // 5000 milliseconds = 5 seconds
-  //     setIntervalId(Id)
-  //     return () => {
-  //       // Clean up the interval when the component unmounts
-  //       clearInterval(intervalId);
-  //     };
-  //   }
-  // }, []);
 
   const sendMessage = () => {
     if (connection && message) {
       // Send a message to the hub
-      connection.invoke("SendMessage", message)
+      connection.invoke("SendMessageToAgent",agentData.id, message)
         .catch((error) => console.error(error));
       //setMessage("");
+    }
+  }
+
+  const getConnectionId = () => {
+    if (connection) {  
+      connection.invoke("GetConnectionId")
+      .then((response => {
+        setConnectionId(response);
+      }))
+        .catch((error) => console.error(error));     
     }
   }
 
@@ -85,6 +117,7 @@ function ChatWindow(props) {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Chat Window</h3>
+          <h3 className="card-title">{connectionId}</h3>
         </div>
         <div className="card-body">
           <div className="form-group">
@@ -99,7 +132,12 @@ function ChatWindow(props) {
             {agentConnected === false ? (
               <p>{poolCount >= 2 ? "Agent busy please try after sometime !" : "Connecting to agent please wait..."}</p>
             ) : (
-              <button className="btn btn-primary mt-2" onClick={sendMessage}>Send</button>
+              <div>
+                  <p>You are connect to {agentData.name}</p>
+                 <button className="btn btn-primary mt-2" onClick={sendMessage}>Send</button>
+                 <button className="btn btn-primary mt-2" onClick={getConnectionId}>ConnectionId</button> 
+                </div>
+            
             )}
           </div>
         </div>
