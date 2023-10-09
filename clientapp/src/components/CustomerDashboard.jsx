@@ -52,7 +52,7 @@ const CustomerDashboard = () => {
       {userId && showChatWindow && (
         <div>
           <p>User ID: {userId}</p>
-          <ChatWindow userId={userId} /> {/* Render ChatWindow */}
+          <ChatWindow userId={userId} userName={customerName} /> {/* Render ChatWindow */}
         </div>
       )}
     </div>
