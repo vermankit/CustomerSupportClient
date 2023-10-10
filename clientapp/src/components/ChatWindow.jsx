@@ -94,11 +94,9 @@ function ChatWindow(props) {
 
 
   const sendMessage = () => {
-    if (connection && message) {
-      // Send a message to the hub
-      connection.invoke("SendMessageToAgent",agentData.id, message)
-        .catch((error) => console.error(error));
-      //setMessage("");
+    if (connection && message) {      
+      connection.invoke("SendMessageToAgent",props.userId,agentData.id, message)
+        .catch((error) => console.error(error));     
     }
   }
 

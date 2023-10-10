@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import * as signalR from "@microsoft/signalr";
 
 function AgentChatWindow(props) {
@@ -9,6 +9,10 @@ function AgentChatWindow(props) {
   const [connectionId,setConnectionId] = useState(""); 
   const [usersList,setUserList] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(""); 
+  const [userMessages, setUserMessages] = useState({});
+  const selectedUserIdRef = useRef("");
+
+
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
@@ -19,9 +23,15 @@ function AgentChatWindow(props) {
       .build();
     setConnection(newConnection);
     setConnected(true);
-    newConnection.on("ReceiveMessage", (message) => {
+    newConnection.on("ReceiveMessageWithUserId", (userId,message) => {
       // Handle the received message
-      setMessages((prevMessages) => [...prevMessages, message]);
+      if(userId === selectedUserIdRef.current){
+        setMessages((prevMessages) => [...prevMessages, message]);
+      }      
+      setUserMessages((prevUserMessages) => ({
+        ...prevUserMessages,
+        [userId]: [...(prevUserMessages[userId] || []), message],
+      }));
     });
 
 
@@ -40,10 +50,7 @@ function AgentChatWindow(props) {
       .catch((error) => console.error(error));      
 
     return () => {     
-      // if (newConnection) {
-      //   newConnection.stop()
-      //     .then(() => console.log("SignalR connection stopped")).catch((error) => console.error(error));
-      // }
+      
     };
   }, []);
    
@@ -74,17 +81,17 @@ function AgentChatWindow(props) {
 
 
   const sendMessage = () => {
-    if (connection && message) {
-      // Send a message to the hub
+    if (connection && message) {   
       connection.invoke("SendMessageToUser",selectedUserId, message)
-        .catch((error) => console.error(error));
-      //setMessage("");
+        .catch((error) => console.error(error));    
     }
   }
 
   const handleUserSelect = (event) => {
     const userId = event.target.value;
     setSelectedUserId(userId);
+    setMessages(userMessages[userId] || []);
+    selectedUserIdRef.current  = userId;
   };
   const getConnectionId = () => {
     if (connection) {  

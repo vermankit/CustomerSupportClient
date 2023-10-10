@@ -23,7 +23,7 @@ const AgentDashboard = () => {
               'Accept': '*/*',
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(agentName), // Send customerName as a JSON string
+            body: JSON.stringify(agentName), 
           });
     
           if (response.ok) {
