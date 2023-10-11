@@ -16,7 +16,7 @@ function AgentChatWindow(props) {
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl("https://localhost:7137/chathub", {
+      .withUrl(`${import.meta.env.VITE_REACT_APP_ENDPOINT}/chathub`, {
         skipNegotiation: true,
         transport: signalR.HttpTransportType.WebSockets
       })
@@ -57,7 +57,7 @@ function AgentChatWindow(props) {
   useEffect(() => {       
     const fetchUserList = async () => {
       try {
-        const response = await fetch(`https://localhost:7137/Session/all?agentid=${props.userId}`);
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_ENDPOINT}/Session/all?agentid=${props.userId}`);
         if (response.ok) {
           const userList = await response.json();   
           console.log(userList);       
@@ -133,7 +133,7 @@ function AgentChatWindow(props) {
               onChange={(e) => setMessage(e.target.value)}
             />
           <button className="btn btn-primary mt-2" onClick={sendMessage}>Send</button>     
-          <button className="btn btn-primary mt-2" onClick={getConnectionId}>ConnectionId</button>        
+          {/* <button className="btn btn-primary mt-2" onClick={getConnectionId}>ConnectionId</button>         */}
           </div>
         </div>
         <ul className="list-group mt-3">

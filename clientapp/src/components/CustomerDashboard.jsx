@@ -6,11 +6,11 @@ const CustomerDashboard = () => {
   const [showChatWindow,setChatWindow] = useState(false);
   const handleNameChange = (event) => {
     setCustomerName(event.target.value);
-  };
-
+  }; 
   const createSupportRequest = async () => {
+    const endpoint = import.meta.env.VITE_REACT_APP_ENDPOINT;
     try {
-      const response = await fetch('https://localhost:7137/Session/request-support', {
+      const response = await fetch(`${endpoint}/Session/request-support`, {
         method: 'POST',
         headers: {
           'Accept': '*/*',
@@ -31,6 +31,8 @@ const CustomerDashboard = () => {
       console.error('Error creating support request:', error);
     }
   };
+;
+  
 
   return (
     <div className='container'>     
