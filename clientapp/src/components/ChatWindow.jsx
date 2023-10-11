@@ -36,12 +36,7 @@ function ChatWindow(props) {
         .catch((error) => {
           console.error('Error retrieving connection ID:', error);
         });
-    }; 
-
-    // newConnection.on("SessionTerminated", () => {
-    //   // Handle the received message
-    //   setSessionTerminated(true);
-    // });
+    };   
 
     newConnection.on("ReceiveMessage", (message) => {
       // Handle the received message
@@ -69,11 +64,10 @@ function ChatWindow(props) {
       try {
         const response = await fetch(`${import.meta.env.VITE_REACT_APP_ENDPOINT}/Session/Poll?userId=${props.userId}`);
         if (response.ok) {
-          const data = await response.json();          
-          //console.log(sessionTerminated);
-          if(data == false){
-            //setSessionTerminated(true);
-            sessionTerminated.current = true;
+          const data = await response.json();
+          if(data === false){
+            setPoolCount((prevCount) => prevCount + 1)  
+            setAgentConnected(false);
           }
         } else {
           console.error('Failed to poll API');
@@ -84,11 +78,17 @@ function ChatWindow(props) {
     };
 
     // Set up an interval to call the API every second
-    const pollInterval = setInterval(pollAPI, 3000);
+    const pollInterval = setInterval(pollAPI, 6000);
 
     // Clean up the interval when the component unmounts
     return () => clearInterval(pollInterval);
   }, []);
+  
+
+  // Log the poolCount to the console to see if it's updating
+  useEffect(() => {
+    console.log('Updated poolCount:', poolCount);
+  }, [poolCount]);
 
   const sendMessage = () => {
     if (connection && message) {
@@ -134,8 +134,7 @@ function ChatWindow(props) {
             ) : (
               <div>
                   <p>You are connect to {agentData.name}</p>
-                 <button className="btn btn-primary mt-2" onClick={sendMessage}>Send</button>
-                 {/* <button className="btn btn-primary mt-2" onClick={getConnectionId}>ConnectionId</button> */}
+                 <button className="btn btn-primary mt-2" onClick={sendMessage}>Send</button>               
                 </div>
 
             )
