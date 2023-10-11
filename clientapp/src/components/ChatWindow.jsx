@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import * as signalR from "@microsoft/signalr";
 
 function ChatWindow(props) {
@@ -7,10 +7,10 @@ function ChatWindow(props) {
   const [connection, setConnection] = useState(null);
   const [agentData, setAgentData] = useState({});
   const [agentConnected, setAgentConnected] = useState(false);
-  const [sessionterminated, setSessionterminated] = useState(false);
+  const [sessionTerminated, setSessionTerminated] = useState(false);
   const [poolCount, setPoolCount] = useState(0);
   const [connectionId,setConnectionId] = useState("");
-
+  
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl(`${import.meta.env.VITE_REACT_APP_ENDPOINT}/chathub`, {
@@ -38,10 +38,10 @@ function ChatWindow(props) {
         });
     }; 
 
-    newConnection.on("SessionTerminated", () => {
-      // Handle the received message
-      setSessionterminated(true);
-    });
+    // newConnection.on("SessionTerminated", () => {
+    //   // Handle the received message
+    //   setSessionTerminated(true);
+    // });
 
     newConnection.on("ReceiveMessage", (message) => {
       // Handle the received message
@@ -69,9 +69,11 @@ function ChatWindow(props) {
       try {
         const response = await fetch(`${import.meta.env.VITE_REACT_APP_ENDPOINT}/Session/Poll?userId=${props.userId}`);
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json();          
+          //console.log(sessionTerminated);
           if(data == false){
-            sessionterminated(true);
+            //setSessionTerminated(true);
+            sessionTerminated.current = true;
           }
         } else {
           console.error('Failed to poll API');
@@ -120,10 +122,14 @@ function ChatWindow(props) {
               className="form-control"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-            />  
+            /> 
             
-            {sessionterminated  ? "Session got terminated please raise new support request" :
-            agentConnected === false ? (
+
+            {/* {
+              sessionTerminated.current === true ? (<p>Network busy</p>) : ""             
+            } */}
+
+            {agentConnected === false ? (
               <p>{poolCount >= 2 ? "Agent busy please try after sometime !" : "Connecting to agent please wait..."}</p>
             ) : (
               <div>
